@@ -1,6 +1,6 @@
 import express from "express";
-import { exec,spawn } from "child_process";
-import path, { dirname } from "path";
+import { exec, spawn } from "child_process";
+import path from "path";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -8,18 +8,18 @@ app.use(express.json());
 
 let serverProcess = null;
 
-
-
+// 🔧 CONFIGURE YOUR LOCAL PATH TO THE CLONED REPO
+const LOCAL_REPO_DIR = "/Users/vasanth/Vasanth Doucuments/GitHub/Demo_App";
 const APP_FILE = "app.js";
-const GIT_REPO_PATH = "https://github.com/Vasanth-004/Demo_App.git"; // Adjust if different
 
 // Utility to run shell commands
-function runCommand(command, cwd = "https://github.com/Vasanth-004/Demo_App.git") {
+function runCommand(command, cwd) {
   return new Promise((resolve, reject) => {
     exec(command, { cwd }, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error: ${error.message}`);
-        reject(stderr);
+        console.error(`Command failed: ${command}`);
+        console.error(stderr || error.message);
+        reject(stderr || error.message);
       } else {
         resolve(stdout);
       }
@@ -27,44 +27,47 @@ function runCommand(command, cwd = "https://github.com/Vasanth-004/Demo_App.git"
   });
 }
 
-// Step-by-step deployment logic
+// Deployment logic
 async function deployApp(res) {
   try {
-    // Step 1: Kill old server
+    // Stop old server
     if (serverProcess) {
       serverProcess.kill();
-      console.log("Stopped previous app.js server");
+      console.log("🛑 Stopped previous app.js server");
     }
 
-    // Step 2: Pull latest from Git
-    console.log("Pulling latest code...");
-    const gitOutput = await runCommand("git pull origin main", "/Users/vasanth/Vasanth Doucuments/GitHub/project/appserver/app.js");
-    console.log("Git Pull Output:\n", gitOutput);
+    // Pull latest code
+    console.log("⬇️ Pulling latest code from GitHub...");
+    const gitOutput = await runCommand("git pull origin main", LOCAL_REPO_DIR);
+    console.log("✅ Git Pull Output:\n", gitOutput);
 
-    // Step 3: Restart the app.js server
-    console.log("Starting new app.js server...");
-    serverProcess = spawn("node", [APP_FILE], { cwd: APP_DIR, stdio: "inherit" });
+    // Start new server
+    console.log("🚀 Starting app.js server...");
+    serverProcess = spawn("node", [APP_FILE], {
+      cwd: LOCAL_REPO_DIR,
+      stdio: "inherit",
+    });
 
-    res.json({ message: "App redeployed successfully." });
+    res.json({ message: "✅ App redeployed successfully." });
   } catch (error) {
-    console.error("Deployment failed:", error);
+    console.error("❌ Deployment failed:", error);
     res.status(500).json({ error: "Deployment failed", details: error });
   }
 }
 
-// GitHub webhook handler (POST /webhook)
+// GitHub webhook handler
 app.post("/webhook", async (req, res) => {
-  console.log("Webhook received from GitHub...");
-  
+  console.log("📬 Webhook received from GitHub...");
   await deployApp(res);
 });
 
-// Root check
+// Root endpoint
 app.get("/", (req, res) => {
   res.send("Webhook server is running!");
 });
 
+// Start server
 const PORT = 4000;
 app.listen(PORT, () => {
-  console.log(`Webhook listener running on http://localhost:${PORT}`);
+  console.log(`🌐 Webhook listener running at http://localhost:${PORT}`);
 });
