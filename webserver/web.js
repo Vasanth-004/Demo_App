@@ -38,7 +38,7 @@ async function deployApp(res) {
 
     // Step 2: Pull latest from Git
     console.log("Pulling latest code...");
-    const gitOutput = await runCommand("git pull origin main", "https://github.com/Vasanth-004/Demo_App.git");
+    const gitOutput = await runCommand("git pull origin main", "/Users/vasanth/Vasanth Doucuments/GitHub/project/appserver/app.js");
     console.log("Git Pull Output:\n", gitOutput);
 
     // Step 3: Restart the app.js server
